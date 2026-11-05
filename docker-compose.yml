@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: chakshu
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"   # reachable from this computer only
     volumes:
       - chakshu-db:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
