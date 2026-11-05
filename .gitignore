@@ -1,0 +1,15 @@
+# Rust
+target/
+# Python
+__pycache__/
+.venv/
+.ipynb_checkpoints/
+# Secrets: never commit these
+.env
+*.key
+# Data: raw downloads and generated files stay local
+data/raw/*
+!data/raw/.gitkeep
+*.parquet
+*.joblib
+models/
