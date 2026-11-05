@@ -16,12 +16,12 @@ params:
     type: location
     description: The machine the agents run on.
     default: local
-  directory:
+  agents_root:
     type: directory
     description: >-
-      Each agent's working folder. Run scripts/setup-agent-folders.ps1 first and paste
-      the path it prints, which ends in {agent}.
-    default: "{$agents_dir}/{agent}"
+      The folder holding one subfolder per agent. Run scripts/setup-agent-folders.ps1
+      first and paste the folder it prints (for example C:/Users/you/chakshu-agents).
+    default: "{$agents_dir}"
   bridge:
     type: bridge
     description: Where the room is created. The server's default messaging app is chosen.
@@ -33,7 +33,7 @@ agents:
     description: Lead investigator. Takes the next alert, traces the money, coordinates the team and recommends.
     provider: "{provider}"
     location: "{location}"
-    directory: "{directory}"
+    directory: "{agents_root}/{agent}"
     model: sonnet
     addressing: owner-agents
     instructions: |
@@ -74,7 +74,7 @@ agents:
     description: Compares the account's activity with the customer's profile, and screens names.
     provider: "{provider}"
     location: "{location}"
-    directory: "{directory}"
+    directory: "{agents_root}/{agent}"
     model: sonnet
     addressing: owner-agents
     instructions: |
@@ -101,7 +101,7 @@ agents:
     description: Checks logins and devices for signs of account takeover before the money moved.
     provider: "{provider}"
     location: "{location}"
-    directory: "{directory}"
+    directory: "{agents_root}/{agent}"
     model: sonnet
     addressing: owner-agents
     instructions: |
@@ -126,7 +126,7 @@ agents:
     description: Drafts the SAR narrative for the BSA Officer, only when a person asks.
     provider: "{provider}"
     location: "{location}"
-    directory: "{directory}"
+    directory: "{agents_root}/{agent}"
     model: sonnet
     addressing: owner-agents
     instructions: |
