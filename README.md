@@ -58,6 +58,17 @@ then load them. The full load of about 5 million transfers takes a few minutes:
 cargo run --release -p aml-etl -- load --data-dir data/raw
 ```
 
+Run the bank-style alert rules, then generate the synthetic customer data:
+
+```powershell
+cargo run --release -p aml-etl -- alerts
+cargo run --release -p aml-etl -- synth
+```
+
+`alerts` prints how many alerts each rule raised and how many were real laundering.
+Its thresholds can be changed, for example `-- alerts --fan-min 6 --min-usd 50000`
+(see `-- alerts --help`).
+
 _(remaining steps to fill in as the build progresses)_
 
 ## Architecture

@@ -1,11 +1,12 @@
-//! aml-etl: loads the IBM HI-Small files into Chakshu's Postgres database.
+//! aml-etl: builds Chakshu's data in Postgres, in three steps run in this order:
 //!
-//!   cargo run --release -p aml-etl -- load --data-dir data/raw
-//!   cargo run --release -p aml-etl -- load --data-dir data/raw --limit 100000   (quick test)
+//!   cargo run --release -p aml-etl -- load --data-dir data/raw   1. load the IBM files
+//!   cargo run --release -p aml-etl -- alerts                     2. run the bank-style alert rules
+//!   cargo run --release -p aml-etl -- synth                      3. make profiles, logins, watchlist
 //!
-//! Reads DATABASE_URL from the environment or from `.env`. Every run starts fresh:
-//! it replaces the tables' contents with the three files, then builds indexes. The load
-//! runs in one transaction, so a failed run leaves the previous data untouched.
+//! Reads DATABASE_URL from the environment or from `.env`. Each step replaces what it
+//! produced before. `load` runs in one transaction, so a failed load leaves the previous
+//! data untouched.
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -19,6 +20,8 @@ use sqlx::postgres::{PgConnection, PgPoolOptions};
 
 const SCHEMA_SQL: &str = include_str!("../../../db/schema.sql");
 const INDEXES_SQL: &str = include_str!("../../../db/indexes.sql");
+const ALERTS_SQL: &str = include_str!("../../../db/alerts.sql");
+const SYNTH_SQL: &str = include_str!("../../../db/synth.sql");
 
 const TRANSFERS_FILE: &str = "HI-Small_Trans.csv";
 const ACCOUNTS_FILE: &str = "HI-Small_accounts.csv";
@@ -45,6 +48,32 @@ enum Command {
         #[arg(long)]
         limit: Option<usize>,
     },
+    /// Run the alert rules over the transfers and report how many alerts each rule raised.
+    Alerts(AlertThresholds),
+    /// Generate customer profiles, login events and the fictional watchlist (run after `alerts`).
+    Synth,
+}
+
+/// Thresholds for the alert rules. Defaults are a starting point; tune them with the report.
+#[derive(clap::Args)]
+struct AlertThresholds {
+    /// R1/R2: at least this many different senders (R1) or receivers (R2) in one day
+    #[arg(long, default_value_t = 5)]
+    fan_min: i32,
+    /// R1/R2/R3: at least this much money in USD moving in (or out) that day
+    #[arg(long, default_value_t = 20_000.0)]
+    min_usd: f64,
+    /// R3: money out is within this ratio of money in (0.8 means 80% to 120%)
+    #[arg(long, default_value_t = 0.9)]
+    pass_ratio: f64,
+    /// R4: transfers between near-low and near-high USD count as "just under a reporting limit"
+    #[arg(long, default_value_t = 9_000.0)]
+    near_low: f64,
+    #[arg(long, default_value_t = 10_000.0)]
+    near_high: f64,
+    /// R4: at least this many such transfers in one day
+    #[arg(long, default_value_t = 3)]
+    near_count: i32,
 }
 
 #[tokio::main]
@@ -53,7 +82,19 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Command::Load { data_dir, limit } => load(&data_dir, limit).await,
+        Command::Alerts(thresholds) => alerts(&thresholds).await,
+        Command::Synth => synth().await,
     }
+}
+
+async fn connect() -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>> {
+    let url = std::env::var("DATABASE_URL").context("DATABASE_URL is not set; copy .env.example to .env and fill it in")?;
+    let pool = PgPoolOptions::new()
+        .max_connections(1)
+        .connect(&url)
+        .await
+        .context("could not connect to the database; is `docker compose up -d` running?")?;
+    Ok(pool.acquire().await?)
 }
 
 async fn load(data_dir: &Path, limit: Option<usize>) -> Result<()> {
@@ -61,9 +102,7 @@ async fn load(data_dir: &Path, limit: Option<usize>) -> Result<()> {
     let accounts_path = require_file(data_dir, ACCOUNTS_FILE)?;
     let patterns_path = require_file(data_dir, PATTERNS_FILE)?;
 
-    let url = std::env::var("DATABASE_URL").context("DATABASE_URL is not set; copy .env.example to .env and fill it in")?;
-    let pool = PgPoolOptions::new().max_connections(1).connect(&url).await.context("could not connect to the database; is `docker compose up -d` running?")?;
-    let mut conn = pool.acquire().await?;
+    let mut conn = connect().await?;
 
     println!("Applying schema");
     sqlx::raw_sql(SCHEMA_SQL).execute(&mut *conn).await?;
@@ -333,4 +372,81 @@ async fn print_summary(conn: &mut PgConnection) -> Result<()> {
     let list: Vec<String> = patterns.iter().map(|(p, n)| format!("{p} {n}")).collect();
     println!("  patterns:   {}", list.join(", "));
     Ok(())
+}
+
+async fn alerts(t: &AlertThresholds) -> Result<()> {
+    let mut conn = connect().await?;
+    let started = Instant::now();
+    for (name, value) in [
+        ("chakshu.fan_min", t.fan_min.to_string()),
+        ("chakshu.min_usd", t.min_usd.to_string()),
+        ("chakshu.pass_ratio", t.pass_ratio.to_string()),
+        ("chakshu.near_low", t.near_low.to_string()),
+        ("chakshu.near_high", t.near_high.to_string()),
+        ("chakshu.near_count", t.near_count.to_string()),
+    ] {
+        sqlx::query("SELECT set_config($1, $2, false)").bind(name).bind(value).execute(&mut *conn).await?;
+    }
+    println!(
+        "Running alert rules (fan-min {}, min-usd {}, pass-ratio {}, near {}..{} x{})",
+        t.fan_min, t.min_usd, t.pass_ratio, t.near_low, t.near_high, t.near_count
+    );
+    sqlx::raw_sql(ALERTS_SQL).execute(&mut *conn).await?;
+
+    let rows: Vec<(String, i64, i64)> = sqlx::query_as(
+        "SELECT rule, COUNT(*), COUNT(*) FILTER (WHERE is_true_positive)
+         FROM alerts, unnest(rules) AS rule GROUP BY rule ORDER BY rule",
+    )
+    .fetch_all(&mut *conn)
+    .await?;
+    let (total, real): (i64, i64) =
+        sqlx::query_as("SELECT COUNT(*), COUNT(*) FILTER (WHERE is_true_positive) FROM alerts")
+            .fetch_one(&mut *conn)
+            .await?;
+    let (laundering_days, caught): (i64, i64) = sqlx::query_as(
+        "WITH d AS (SELECT from_account AS a, ts::date AS day FROM transfers WHERE is_laundering
+                    UNION SELECT to_account, ts::date FROM transfers WHERE is_laundering)
+         SELECT COUNT(*), COUNT(al.id) FROM d LEFT JOIN alerts al ON al.account_number = d.a AND al.alert_day = d.day",
+    )
+    .fetch_one(&mut *conn)
+    .await?;
+
+    println!("\n{:<18} {:>9} {:>9} {:>8}", "rule", "alerts", "real", "real %");
+    for (rule, n, tp) in &rows {
+        println!("{rule:<18} {n:>9} {tp:>9} {:>7.1}%", pct(*tp, *n));
+    }
+    println!("{:<18} {total:>9} {real:>9} {:>7.1}%", "ALL ALERTS", pct(real, total));
+    println!(
+        "\nAlerts cover {caught} of {laundering_days} account-days with laundering ({:.1}%).",
+        pct(caught, laundering_days)
+    );
+    println!("Done in {:.0?}", started.elapsed());
+    Ok(())
+}
+
+async fn synth() -> Result<()> {
+    let mut conn = connect().await?;
+    let started = Instant::now();
+    println!("Generating customer profiles, login events and the fictional watchlist");
+    sqlx::raw_sql(SYNTH_SQL).execute(&mut *conn).await?;
+    let counts: (i64, i64, i64, i64, i64) = sqlx::query_as(
+        "SELECT (SELECT COUNT(*) FROM customer_profiles),
+                (SELECT COUNT(*) FROM login_events),
+                (SELECT COUNT(DISTINCT account_number) FROM login_events WHERE event_type = 'password_reset'),
+                (SELECT COUNT(*) FROM watchlist),
+                (SELECT COUNT(*) FROM customer_profiles WHERE opened_on > DATE '2022-07-01')",
+    )
+    .fetch_one(&mut *conn)
+    .await?;
+    println!("  customer profiles:        {}", counts.0);
+    println!("  recently opened accounts: {}", counts.4);
+    println!("  login events:             {}", counts.1);
+    println!("  planted takeovers:        {}", counts.2);
+    println!("  watchlist names:          {}", counts.3);
+    println!("Done in {:.0?}", started.elapsed());
+    Ok(())
+}
+
+fn pct(part: i64, whole: i64) -> f64 {
+    if whole == 0 { 0.0 } else { 100.0 * part as f64 / whole as f64 }
 }
