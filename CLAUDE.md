@@ -33,12 +33,14 @@ Never commit secrets (.env, API keys, tokens), the raw IBM data, or personal dat
 | MCP server | Rust (rmcp 3) | `crates/aml-mcp` | Read-only tools every agent uses; streamable HTTP |
 | Alert feed | Rust | `crates/aml-feed` | Posts alerts and SAR deadline reminders into the room via `POST /agents/{id}/message` |
 | ML | Python | `python/` | XGBoost training, SHAP reasons written to Postgres |
-| Room setup | YAML | `switch/` | Agents, instructions, policies as room docs |
+| Room setup | YAML | `switch/` | Template: 4 agents + `#aml-alerts` room; built by `scripts/build_room_template.py` from `room-template.base.yaml` + `knowledge/policies/` |
 | Policies | Markdown | `knowledge/policies/` | Synthetic policies of a fictional bank |
 
 Agents in the room (Claude Code via Switch Console, on the owner's Claude Pro plan):
-`@graph-analyst`, `@kyc-profiler`, `@cyber-signals`, `@case-writer`. Our own Rust code
-calls Google Gemini (OpenAI-compatible endpoint) for recommendations and embeddings.
+`@graph-analyst` (lead), `@kyc-profiler`, `@cyber-signals`, `@case-writer`. Policies are
+room documents the agents cite. Switch does not pass a user's own Claude Code MCP settings
+to the agents it starts, so each agent folder carries `.mcp.json` +
+`.claude/settings.json` (`scripts/setup-agent-folders.ps1`).
 
 ## Rules the product must keep
 
