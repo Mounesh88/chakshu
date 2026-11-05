@@ -86,6 +86,16 @@ pub struct ScreenRequest {
     pub min_score: Option<f64>,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct DeadlineRequest {
+    #[schemars(description = "Day a person confirmed the facts look suspicious (initial detection), YYYY-MM-DD")]
+    pub detected_on: String,
+    #[schemars(description = "Whether a suspect has been identified")]
+    pub suspect_identified: bool,
+    #[schemars(description = "Count days remaining from this day, YYYY-MM-DD (default: detected_on)")]
+    pub as_of: Option<String>,
+}
+
 // ---------------------------------------------------------------------------------------
 // Rows returned (no ground-truth columns anywhere)
 // ---------------------------------------------------------------------------------------
@@ -414,6 +424,31 @@ impl Bank {
             "report": report,
         }))
     }
+
+    #[tool(description = "The SAR filing deadline under the US bank rule (31 CFR 1020.320): 30 calendar days after initial detection, or up to 60 days when no suspect has been identified. Always use this tool for deadlines; never work them out yourself.")]
+    async fn sar_deadline(&self, Parameters(req): Parameters<DeadlineRequest>) -> Result<String, String> {
+        let detected = parse_day(&req.detected_on)?;
+        let as_of = req.as_of.as_deref().map(parse_day).transpose()?.unwrap_or(detected);
+        let d = sar_deadline_for(detected, req.suspect_identified);
+        to_json(&serde_json::json!({
+            "detected_on": detected,
+            "suspect_identified": req.suspect_identified,
+            "filing_deadline": d,
+            "days_remaining": (d - as_of).num_days(),
+            "rule": if req.suspect_identified {
+                "30 calendar days after initial detection"
+            } else {
+                "No suspect identified: up to 30 more days to identify one, but no later than 60 days after initial detection"
+            },
+            "note": "Only the BSA Officer decides whether to file. Never tell the customer a SAR is being considered.",
+        }))
+    }
+}
+
+/// 31 CFR 1020.320: 30 days after initial detection; with no suspect identified,
+/// filing may be delayed up to 30 more days, so never later than 60 days.
+fn sar_deadline_for(detected: NaiveDate, suspect_identified: bool) -> NaiveDate {
+    detected + chrono::Duration::days(if suspect_identified { 30 } else { 60 })
 }
 
 #[tool_handler]
@@ -492,7 +527,7 @@ async fn main() -> Result<()> {
     );
     let router = axum::Router::new().nest_service("/mcp", service);
     let listener = tokio::net::TcpListener::bind(&bind).await.with_context(|| format!("could not listen on {bind}"))?;
-    println!("Chakshu MCP server: http://{bind}/mcp  (read-only, 8 tools). Press Ctrl+C to stop.");
+    println!("Chakshu MCP server: http://{bind}/mcp  (read-only, 9 tools). Press Ctrl+C to stop.");
     axum::serve(listener, router).await?;
     Ok(())
 }
@@ -516,6 +551,13 @@ mod tests {
         assert!(score("Evergreen Bridge Holdings", "Evergreens Bridge Holdings") >= 0.85);
         assert!(score("Evergreen Harvest & Co", "Evergreens Bridge Holdings") < 0.85);
         assert_eq!(super::normalize("Blue  River & Co."), "blue river co");
+    }
+
+    #[test]
+    fn sar_deadlines_follow_the_rule() {
+        let d = super::parse_day("2022-09-14").unwrap();
+        assert_eq!(super::sar_deadline_for(d, true).to_string(), "2022-10-14");
+        assert_eq!(super::sar_deadline_for(d, false).to_string(), "2022-11-13");
     }
 
     #[test]

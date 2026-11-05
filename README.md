@@ -18,18 +18,35 @@ hides in the pile.
 
 ## Agents we connected
 
+Four Claude Code agents, created and run by Switch Console from one template
+([`switch/chakshu-room.template.yaml`](switch/chakshu-room.template.yaml)). They reach
+bank data only through Chakshu's read-only MCP server, written in Rust.
+
 | Agent | Runs on | Job |
 |---|---|---|
-| `@graph-analyst` | _(to fill in)_ | Money-flow patterns, risk score with reasons, sourced recommendations |
-| `@kyc-profiler` | _(to fill in)_ | Compares activity with the customer profile; sanctions screening |
-| `@cyber-signals` | _(to fill in)_ | Login and device evidence of account takeover |
-| `@case-writer` | _(to fill in)_ | Drafts the SAR narrative when a person escalates |
-| `@alert-feed` | Rust, Switch agent protocol | Posts new alerts and SAR deadline reminders |
+| `@graph-analyst` | Claude Code (Sonnet) | Lead investigator: takes the next alert, traces the money (fan-in, fan-out, pass-through, loops), hands off to the specialists, then posts a risk assessment with sourced recommendations |
+| `@kyc-profiler` | Claude Code (Sonnet) | Compares the account's activity with the customer's profile, checks how new the counterparties are, screens the watchlist |
+| `@cyber-signals` | Claude Code (Sonnet) | Checks logins, devices and password resets before the money moved, to tell a takeover victim from a launderer |
+| `@case-writer` | Claude Code (Sonnet) | Drafts the SAR narrative, only when a person asks |
 
 ## How the channel is set up
 
-_(to fill in: the room, its instructions, the policy documents attached to it, who is in it,
-and how a person records a decision)_
+One private Mattermost channel, `#aml-alerts`, created by the template with the four agents
+and you in it.
+
+- **Room instructions** tell every agent the workflow and the rules: investigate and
+  recommend, never decide; cite a room document for every recommendation; compute
+  deadlines only with the `sar_deadline` tool; never suggest telling the customer
+  about an investigation.
+- **Room documents** hold the bank's rulebook: six policies of a fictional bank (AML-01
+  to AML-06) and a summary of public US guidance (REF-01), from
+  [`knowledge/policies/`](knowledge/policies/). Agents cite them by ID.
+- **The flow:** a person asks `@graph-analyst` for the next alert. It traces the money and
+  hands off to `@kyc-profiler` and `@cyber-signals`, who investigate **in parallel** and
+  reply in the thread. `@graph-analyst` posts the assessment. **A person decides**, in one
+  line: `DECISION #<alert id>: CLOSE | ESCALATE | FILE SAR | NO SAR | REFER FRAUD - <reason>`.
+  The room's history is the case file and audit trail.
+- Agents answer only their owner and each other (`addressing: owner-agents`).
 
 ## How to run it
 
@@ -95,10 +112,26 @@ claude mcp list
 | `get_login_events` | Logins and password resets, flagging new devices and foreign countries |
 | `screen_watchlist` | Fuzzy name screening against the fictional watchlist |
 | `detect_patterns` | Fan-in, fan-out, pass-through, and short loops through the account |
+| `sar_deadline` | The SAR filing deadline under 31 CFR 1020.320 (30 days, or 60 with no suspect) |
 
 Every tool only reads. None can close a case, file a report or contact a customer, and
 none returns IBM's ground-truth labels (a test fails the build if the server's code
 mentions them).
+
+### Create the room
+
+1. Prepare the agents' folders (each gets the connection to the MCP server):
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\setup-agent-folders.ps1
+   ```
+   It prints a directory path ending in `{agent}`.
+2. In Switch Console, open **Templates**, import `switch/chakshu-room.template.yaml`, and
+   in the advanced options set the agents' **directory** to the path the script printed.
+   Run it: Switch creates the four agents and `#aml-alerts`.
+3. With the MCP server running, type in `#aml-alerts`:
+   ```
+   @graph-analyst next alert
+   ```
 
 _(remaining steps to fill in as the build progresses)_
 
