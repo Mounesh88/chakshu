@@ -1,0 +1,20 @@
+# Chakshu's own database: Postgres 16 with pgvector.
+# Start: docker compose up -d      Stop: docker compose down
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: chakshu-db
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: chakshu
+    ports:
+      - "5433:5432"
+    volumes:
+      - chakshu-db:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chakshu"]
+      interval: 5s
+      retries: 10
+volumes:
+  chakshu-db:

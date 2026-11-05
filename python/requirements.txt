@@ -1,0 +1,10 @@
+jupyter
+pandas
+polars
+pyarrow
+scikit-learn
+xgboost
+shap
+matplotlib
+psycopg[binary]
+python-dotenv
