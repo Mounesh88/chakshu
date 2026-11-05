@@ -43,10 +43,19 @@ and how a person records a decision)_
 
 ### Steps
 
-```bash
-cp .env.example .env            # then fill in the values
-docker compose up -d            # starts Chakshu's database on port 5433
+On Windows, in PowerShell, from the repository folder:
+
+```powershell
+copy .env.example .env          # then set POSTGRES_PASSWORD, and the same password in DATABASE_URL
+docker compose up -d            # starts Chakshu's database on localhost:5433
 cargo build --release
+```
+
+Download the three IBM data files into `data/raw/` (see [`data/README.md`](data/README.md)),
+then load them. The full load of about 5 million transfers takes a few minutes:
+
+```powershell
+cargo run --release -p aml-etl -- load --data-dir data/raw
 ```
 
 _(remaining steps to fill in as the build progresses)_
@@ -57,7 +66,9 @@ _(diagram and explanation to add)_
 
 ## Data
 
-All data is synthetic. See [`data/README.md`](data/README.md).
+All data is synthetic. Transactions come from IBM's synthetic AML dataset (Altman et al.,
+NeurIPS 2023), used under the CDLA-Sharing-1.0 license and not redistributed here.
+See [`data/README.md`](data/README.md).
 
 ## License
 
