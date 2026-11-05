@@ -95,12 +95,9 @@ running in its own PowerShell window:
 cargo run --release -p aml-mcp      # serves http://127.0.0.1:8090/mcp
 ```
 
-Connect Claude Code to it once (user scope, so every agent session Switch starts sees it):
-
-```powershell
-claude mcp add --transport http --scope user chakshu http://127.0.0.1:8090/mcp
-claude mcp list
-```
+Switch does not pass your own Claude Code MCP settings to the agents it starts, so each
+agent's folder carries its own connection to this server (`.mcp.json`), written by
+`scripts/setup-agent-folders.ps1` in the next section.
 
 | Tool | What it returns |
 |---|---|
