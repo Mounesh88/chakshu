@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = ["crates/aml-core", "crates/aml-etl", "crates/aml-graph", "crates/aml-mcp", "crates/aml-feed"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+
+# Shared versions: crates add these with `dep = { workspace = true }`.
+[workspace.dependencies]
+aml-core = { path = "crates/aml-core" }
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+petgraph = "0.8.3"
+polars = { version = "0.55.2", features = ["lazy", "csv", "parquet"] }
+reqwest = { version = "0.13.5", features = ["json"] }
+rmcp = { version = "3.8.0", features = ["server", "macros", "transport-streamable-http-server"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "postgres", "chrono", "json"] }
+strsim = "0.11"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
