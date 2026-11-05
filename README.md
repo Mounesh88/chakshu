@@ -69,6 +69,37 @@ cargo run --release -p aml-etl -- synth
 Its thresholds can be changed, for example `-- alerts --fan-min 6 --min-usd 50000`
 (see `-- alerts --help`).
 
+### Start the MCP server
+
+The agents reach the bank data only through Chakshu's read-only MCP server. Leave it
+running in its own PowerShell window:
+
+```powershell
+cargo run --release -p aml-mcp      # serves http://127.0.0.1:8090/mcp
+```
+
+Connect Claude Code to it once (user scope, so every agent session Switch starts sees it):
+
+```powershell
+claude mcp add --transport http --scope user chakshu http://127.0.0.1:8090/mcp
+claude mcp list
+```
+
+| Tool | What it returns |
+|---|---|
+| `list_alerts` | Alerts from the rules engine, newest first (filter by rule or day) |
+| `get_alert` | One alert: account, day, rules fired, money in and out, the customer |
+| `get_transactions` | The account's transfers that day, in original currency and USD |
+| `get_counterparties` | Who it paid and was paid by, with each counterparty's account age |
+| `get_customer_profile` | What the bank recorded at onboarding vs. what the account actually moved |
+| `get_login_events` | Logins and password resets, flagging new devices and foreign countries |
+| `screen_watchlist` | Fuzzy name screening against the fictional watchlist |
+| `detect_patterns` | Fan-in, fan-out, pass-through, and short loops through the account |
+
+Every tool only reads. None can close a case, file a report or contact a customer, and
+none returns IBM's ground-truth labels (a test fails the build if the server's code
+mentions them).
+
 _(remaining steps to fill in as the build progresses)_
 
 ## Architecture

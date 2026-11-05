@@ -115,7 +115,7 @@ GROUP BY a.account_number, p.home_country;
 -- Normal logins: 3 to 8 over the period, from home, on the customer's usual device.
 INSERT INTO login_events (account_number, ts, event_type, device_id, ip_country, is_new_device)
 SELECT account_number,
-       TIMESTAMP '2022-09-01' + (chakshu_rand(account_number || 'login' || n) * INTERVAL '17 days'),
+       date_trunc('minute', TIMESTAMP '2022-09-01' + (chakshu_rand(account_number || 'login' || n) * INTERVAL '17 days')),
        'login',
        'dev-' || substr(md5(account_number || 'device'), 1, 6),
        home_country,
@@ -142,7 +142,7 @@ SELECT account_number, first_true_ts - make_interval(hours => lead_hours::int) +
 -- Harmless travel on ~4% of innocent alerted accounts: usual device, another country.
 INSERT INTO login_events (account_number, ts, event_type, device_id, ip_country, is_new_device)
 SELECT account_number,
-       TIMESTAMP '2022-09-01' + (chakshu_rand(account_number || 'trip') * INTERVAL '17 days'),
+       date_trunc('minute', TIMESTAMP '2022-09-01' + (chakshu_rand(account_number || 'trip') * INTERVAL '17 days')),
        'login',
        'dev-' || substr(md5(account_number || 'device'), 1, 6),
        chakshu_pick(account_number || 'trip-country',
