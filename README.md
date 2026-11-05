@@ -124,10 +124,11 @@ mentions them).
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts\setup-agent-folders.ps1
    ```
-   It prints a directory path ending in `{agent}`.
-2. In Switch Console, open **Templates**, import `switch/chakshu-room.template.yaml`, and
-   in the advanced options set the agents' **directory** to the path the script printed.
-   Run it: Switch creates the four agents and `#aml-alerts`.
+   It prints the agents' folder, for example `C:\Users\you\chakshu-agents`.
+2. Save `switch/chakshu-room.template.yaml` under **Templates** in Switch Console. On
+   Windows, Console cannot start agents itself, so ask **switch-buddy** to run it: "Run my
+   template Chakshu room with Claude Code on my computer, agents_root =
+   C:\Users\you\chakshu-agents". Switch creates the four agents and `#aml-alerts`.
 3. With the MCP server running, type in `#aml-alerts`:
    ```
    @graph-analyst next alert

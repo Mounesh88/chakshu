@@ -33,9 +33,8 @@ foreach ($agent in $agents) {
 }
 
 Write-Host ""
-Write-Host "In Switch Console, when you import switch\chakshu-room.template.yaml, set the"
-Write-Host "agents' directory (advanced options) to:"
+Write-Host "When you use switch\chakshu-room.template.yaml, set Agents folder (agents_root) to:"
 Write-Host ""
-Write-Host "    $(Join-Path $Root '{agent}')" -ForegroundColor Green
+Write-Host "    $Root" -ForegroundColor Green
 Write-Host ""
 Write-Host "Keep the MCP server running: cargo run --release -p aml-mcp"
