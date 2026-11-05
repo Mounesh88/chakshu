@@ -28,7 +28,7 @@ Never commit secrets (.env, API keys, tokens), the raw IBM data, or personal dat
 | Part | Language | Path | Job |
 |---|---|---|---|
 | Shared types | Rust | `crates/aml-core` | Alert, Transfer, Account, Case, Event |
-| Data pipeline | Rust (csv + Postgres COPY) | `crates/aml-etl` | Load IBM HI-Small files into Postgres (`aml-etl load`) |
+| Data pipeline | Rust (csv + Postgres COPY) | `crates/aml-etl` | `load` IBM files, run `alerts` rules, `synth` profiles/logins/watchlist (SQL in `db/`) |
 | Graph patterns | Rust (petgraph) | `crates/aml-graph` | Fan-in, fan-out, cycles |
 | MCP server | Rust (rmcp 3) | `crates/aml-mcp` | Read-only tools every agent uses; streamable HTTP |
 | Alert feed | Rust | `crates/aml-feed` | Posts alerts and SAR deadline reminders into the room via `POST /agents/{id}/message` |
@@ -47,6 +47,8 @@ calls Google Gemini (OpenAI-compatible endpoint) for recommendations and embeddi
 - SAR deadline = detection + 30 days (60 max if no suspect), computed in code, never by an LLM.
 - Every recommendation cites a source (policy, FFIEC manual, FinCEN advisory, or past case).
 - All data is synthetic. README states: prototype, not legal or compliance advice.
+- `alerts.is_true_positive` and `transfers.is_laundering` are ground truth for training and
+  evaluation only. No MCP tool or agent may ever see them.
 
 ## Local commands (Windows, PowerShell)
 
