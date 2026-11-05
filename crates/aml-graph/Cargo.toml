@@ -5,4 +5,5 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-aml-core = { workspace = true }
+petgraph = { workspace = true }
+serde = { workspace = true }
