@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/aml-core", "crates/aml-etl", "crates/aml-graph", "crates/aml-mcp", "crates/aml-feed"]
+members = ["crates/aml-core", "crates/aml-etl", "crates/aml-graph", "crates/aml-mcp"]
 
 [workspace.package]
 edition = "2024"

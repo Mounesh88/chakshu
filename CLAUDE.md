@@ -31,7 +31,6 @@ Never commit secrets (.env, API keys, tokens), the raw IBM data, or personal dat
 | Data pipeline | Rust (csv + Postgres COPY) | `crates/aml-etl` | `load` IBM files, run `alerts` rules, `synth` profiles/logins/watchlist (SQL in `db/`) |
 | Graph patterns | Rust (petgraph) | `crates/aml-graph` | Fan-in, fan-out, cycles |
 | MCP server | Rust (rmcp 3) | `crates/aml-mcp` | Read-only tools every agent uses; streamable HTTP |
-| Alert feed | Rust | `crates/aml-feed` | Posts alerts and SAR deadline reminders into the room via `POST /agents/{id}/message` |
 | ML | Python | `python/` | XGBoost training, SHAP reasons written to Postgres |
 | Room setup | YAML | `switch/` | Template: 4 agents + `#aml-alerts` room; built by `scripts/build_room_template.py` from `room-template.base.yaml` + `knowledge/policies/` |
 | Policies | Markdown | `knowledge/policies/` | Synthetic policies of a fictional bank |

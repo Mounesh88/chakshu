@@ -31,13 +31,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aml-feed"
-version = "0.1.0"
-dependencies = [
- "aml-core",
-]
-
-[[package]]
 name = "aml-graph"
 version = "0.1.0"
 dependencies = [
