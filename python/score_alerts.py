@@ -26,6 +26,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote, unquote
 
 import numpy as np
 import pandas as pd
@@ -192,7 +193,22 @@ def database_url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
         raise SystemExit("DATABASE_URL is not set. Copy .env.example to .env and fill it in.")
-    return url
+    return encode_password(url)
+
+
+def encode_password(url: str) -> str:
+    """Percent-encode the password, so one containing @ or : still works.
+
+    The Rust tools split user and host at the last @; libpq splits at the first.
+    """
+    scheme, sep, rest = url.partition("://")
+    if not sep or "@" not in rest:
+        return url
+    userinfo, _, hostpart = rest.rpartition("@")
+    user, colon, password = userinfo.partition(":")
+    if not colon:
+        return url
+    return f"{scheme}://{user}:{quote(unquote(password), safe='')}@{hostpart}"
 
 
 def model() -> xgb.XGBClassifier:
