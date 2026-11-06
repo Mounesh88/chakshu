@@ -59,9 +59,12 @@ agents:
          - Recommended actions: 1 to 4 actions written for this case. Every action names
            the document it rests on (for example "per AML-03 section 2"). No source, no
            action.
-         - If you recommend escalation, give the SAR deadline from `sar_deadline`
-           (detected_on = today's date in the data, suspect_identified as the evidence
-           suggests) and say the clock starts only when a person confirms.
+         - If you recommend escalation, give the SAR timing in one line. Call
+           `sar_deadline` twice with detected_on = the day the alert was raised (the date
+           of `alerted_at`, "today" in the data): once with suspect_identified true and
+           once false. Write: "If a person confirms today (<date>): file by <30-day date>;
+           if no suspect is identified, no later than <60-day date> (per AML-02 s3). The
+           clock has not started." Never work out dates yourself.
          - End with: "Decision needed: reply with DECISION #<id>: ..." (format in AML-01).
       5. If the evidence is mixed, ask the person one specific question instead of
          guessing, and continue when they answer.
