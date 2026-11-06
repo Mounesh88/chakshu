@@ -237,6 +237,14 @@ score and its top three reasons through `score_alert`, and weigh it as one signa
 - Owners and beneficial owners are not in the data, and the agents say so.
 - Prototype only: not legal or compliance advice.
 
+## Next steps
+
+- **Alert feed:** post each new alert into the room automatically, and remind the room as
+  a SAR deadline approaches, so nobody has to ask for the next alert.
+- **Real owner data:** add beneficial owners, so the watchlist screen covers the people
+  behind a company, not only its name.
+- **Learning from decisions:** feed the analysts' DECISION lines back into the model.
+
 ## Data
 
 All data is synthetic. Transactions come from IBM's synthetic AML dataset (Altman et al.,
