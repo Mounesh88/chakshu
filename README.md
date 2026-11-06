@@ -86,6 +86,16 @@ cargo run --release -p aml-etl -- synth
 Its thresholds can be changed, for example `-- alerts --fan-min 6 --min-usd 50000`
 (see `-- alerts --help`).
 
+Train the risk model and score every alert (a few minutes on the full data):
+
+```powershell
+python -m pip install -r python/requirements.txt
+python python/score_alerts.py
+```
+
+It prints the model's results and writes a score with its top three reasons for each
+alert to the `alert_scores` table, which the `score_alert` tool reads.
+
 ### Start the MCP server
 
 The agents reach the bank data only through Chakshu's read-only MCP server. Leave it
@@ -109,6 +119,7 @@ agent's folder carries its own connection to this server (`.mcp.json`), written 
 | `get_login_events` | Logins and password resets, flagging new devices and foreign countries |
 | `screen_watchlist` | Fuzzy name screening against the fictional watchlist |
 | `detect_patterns` | Fan-in, fan-out, pass-through, and short loops through the account |
+| `score_alert` | The ML risk score (HIGH, UNSURE or LOW) and the top three reasons behind it |
 | `sar_deadline` | The SAR filing deadline under 31 CFR 1020.320 (30 days, or 60 with no suspect) |
 
 Every tool only reads. None can close a case, file a report or contact a customer, and
