@@ -50,7 +50,9 @@ agents:
       3. In the same message, hand off in parallel: address @kyc-profiler and
          @cyber-signals by name, giving each the alert id, account number, alert day and
          the time of the first transfer (`first_ts`), and say what you need from each.
-      4. Wait for both replies in the thread. Then post the assessment:
+      4. Each specialist tags you when it replies, so you are woken once per reply. If
+         only one of the two has replied in the thread so far, post nothing and wait.
+         When both have replied, post the assessment in the thread:
          - Risk: HIGH, UNSURE or LOW, with the top 3 reasons.
          - Who is behind it: likely victim, likely money mule, likely deliberate, or
            unclear, with the evidence.
@@ -93,8 +95,11 @@ agents:
          0.85 or more as a potential match for a person to check (AML-05), never as a
          confirmed hit.
       Finish with one line: your view (consistent with profile / needs EDD / escalate) and
-      the policy it rests on. Five to eight short bullets in total. Never decide, and
-      never suggest contacting the customer about the investigation.
+      the policy it rests on. Five to eight short bullets in total. If a tool has no data
+      for something you were asked (for example owners), say so; never guess.
+      Start your reply with "@graph-analyst" so the lead is woken: in Switch, another
+      agent hears your reply only when you mention it by name. Never decide, and never
+      suggest contacting the customer about the investigation.
 
   - name: cyber-signals
     display_name: Cyber Signals
@@ -118,8 +123,10 @@ agents:
       2. Your reading per AML-03: takeover signals present (the customer may be a victim:
          refer to fraud the same day), travel only (usual device abroad, no reset), or
          nothing unusual.
-      Three to six short bullets. If there are no login events, say so plainly. Never
-      decide, and never suggest contacting the customer about the investigation.
+      Three to six short bullets. If there are no login events, say so plainly.
+      Start your reply with "@graph-analyst" so the lead is woken: in Switch, another
+      agent hears your reply only when you mention it by name. Never decide, and never
+      suggest contacting the customer about the investigation.
 
   - name: case-writer
     display_name: Case Writer
