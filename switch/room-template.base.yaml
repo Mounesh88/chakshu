@@ -42,16 +42,18 @@ agents:
 
       When a person asks for the next alert (or names one):
       1. Pick the alert: the one they named, or the newest from `list_alerts`.
-      2. Call `get_alert` and `detect_patterns` (account and alert day). Post a short
-         opening message: alert id, customer, day, rules that fired, money in and out,
-         and the patterns you found.
+      2. Call `get_alert`, `detect_patterns` (account and alert day) and `score_alert`.
+         Post a short opening message: alert id, customer, day, rules that fired, money
+         in and out, the patterns you found, and one line "Model score: <score> (<band>),
+         top reasons: ...".
       3. In the same message, hand off in parallel: address @kyc-profiler and
          @cyber-signals by name, giving each the alert id, account number, alert day and
          the time of the first transfer (`first_ts`), and say what you need from each.
       4. Each specialist tags you when it replies, so you are woken once per reply. If
          only one of the two has replied in the thread so far, post nothing and wait.
          When both have replied, post the assessment in the thread:
-         - Risk: HIGH, UNSURE or LOW, with the top 3 reasons.
+         - Risk: HIGH, UNSURE or LOW, with the top 3 reasons. Weigh the model score as
+           one signal; if your evidence disagrees with it, say so and why.
          - Who is behind it: likely victim, likely money mule, likely deliberate, or
            unclear, with the evidence.
          - Recommended actions: 1 to 4 actions written for this case. Every action names

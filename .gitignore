@@ -13,3 +13,5 @@ data/raw/*
 *.parquet
 *.joblib
 models/
+# ML results from a local run (numbers go in the README by hand)
+python/results/

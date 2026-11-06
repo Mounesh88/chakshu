@@ -1,10 +1,6 @@
-jupyter
+# python python/score_alerts.py
 pandas
-polars
-pyarrow
-scikit-learn
-xgboost
-shap
-matplotlib
 psycopg[binary]
 python-dotenv
+scikit-learn
+xgboost

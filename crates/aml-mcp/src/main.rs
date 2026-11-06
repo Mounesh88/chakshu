@@ -158,6 +158,15 @@ struct ProfileRow {
 }
 
 #[derive(Serialize, sqlx::FromRow)]
+struct ScoreRow {
+    alert_id: i64,
+    score: f64,
+    band: String,
+    reasons: serde_json::Value,
+    model: String,
+}
+
+#[derive(Serialize, sqlx::FromRow)]
 struct LoginRow {
     ts: NaiveDateTime,
     event_type: String,
@@ -425,6 +434,34 @@ impl Bank {
         }))
     }
 
+    #[tool(description = "The machine-learning risk score for an alert (0 to 1, with band HIGH, UNSURE or LOW) and the top three reasons that pushed it up. The model learned from past alert outcomes; each score comes from a model that never saw that alert. It is one signal to weigh, never a decision.")]
+    async fn score_alert(&self, Parameters(req): Parameters<AlertRequest>) -> Result<String, String> {
+        let row: Option<ScoreRow> = sqlx::query_as(
+            "SELECT alert_id, round(score::numeric, 3)::float8 AS score, band, reasons, model \
+             FROM alert_scores WHERE alert_id = $1",
+        )
+        .bind(req.alert_id)
+        .fetch_optional(&self.db)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::Database(d) if d.code().as_deref() == Some("42P01") => {
+                "no scores yet: run python/score_alerts.py first".to_string()
+            }
+            other => db_error(other),
+        })?;
+        match row {
+            Some(r) => to_json(&serde_json::json!({
+                "alert_id": r.alert_id,
+                "score": r.score,
+                "band": r.band,
+                "top_reasons": r.reasons,
+                "model": r.model,
+                "note": "Advisory model score. Weigh it with the evidence; a person decides.",
+            })),
+            None => Err(format!("no score for alert {}", req.alert_id)),
+        }
+    }
+
     #[tool(description = "The SAR filing deadline under the US bank rule (31 CFR 1020.320): 30 calendar days after initial detection, or up to 60 days when no suspect has been identified. Always use this tool for deadlines; never work them out yourself.")]
     async fn sar_deadline(&self, Parameters(req): Parameters<DeadlineRequest>) -> Result<String, String> {
         let detected = parse_day(&req.detected_on)?;
@@ -527,7 +564,7 @@ async fn main() -> Result<()> {
     );
     let router = axum::Router::new().nest_service("/mcp", service);
     let listener = tokio::net::TcpListener::bind(&bind).await.with_context(|| format!("could not listen on {bind}"))?;
-    println!("Chakshu MCP server: http://{bind}/mcp  (read-only, 9 tools). Press Ctrl+C to stop.");
+    println!("Chakshu MCP server: http://{bind}/mcp  (read-only, 10 tools). Press Ctrl+C to stop.");
     axum::serve(listener, router).await?;
     Ok(())
 }
