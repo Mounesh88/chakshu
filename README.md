@@ -257,10 +257,10 @@ working the rules' queue in order would find 1 real case in about every 64 alert
 | Features | ROC-AUC | PR-AUC | Real cases in the top 100 alerts | Real laundering caught in the top 10% | in the top 20% |
 |---|---|---|---|---|---|
 | Rules alone (queue in random order) | 0.50 | 0.016 | about 2 | 10% | 20% |
-| IBM transactions only | 0.929 | 0.422 | 86 | 82% | 90% |
-| Transactions + synthetic customer data | 0.953 | 0.609 | 99 | 88% | 93% |
+| IBM transactions only | 0.927 | 0.412 | 85 | 80% | 90% |
+| Transactions + synthetic customer data | 0.949 | 0.599 | 98 | 87% | 93% |
 
-In plain words: sorted by the model's score, the first tenth of the queue holds 82% of
+In plain words: sorted by the model's score, the first tenth of the queue holds 80% of
 the real laundering, using IBM's transaction data alone. The agents see each alert's
 score and its top three reasons through `score_alert`, and weigh it as one signal.
 
