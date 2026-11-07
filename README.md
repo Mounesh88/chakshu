@@ -50,6 +50,44 @@ and you in it.
   The room's history is the case file and audit trail.
 - Agents answer only their owner and each other (`addressing: owner-agents`).
 
+## See it working
+
+One alert, #26951, from start to finish in the live room. Every screenshot is from the
+Switch room on our machine; all data is synthetic.
+
+**1. A person asks; the lead investigates and hands off; the specialists work in parallel.**
+The analyst types `@graph-analyst take alert #26951`. `@graph-analyst` traces the money
+(fan-out to 5 accounts, 93% passed straight through), adds the ML score with its reasons,
+and hands off to `@kyc-profiler` and `@cyber-signals` at the same minute. Both report back
+by tagging the lead.
+
+![Hand-off and parallel investigation](docs/screenshots/1-handoff-and-parallel.png)
+
+**2. The assessment: risk, who is likely behind it, cited actions, and a stop.** Every
+action names the policy section it rests on. The lead weighs the model score as one
+signal ("100% ACH is not evidence of wrongdoing"). The SAR timing comes from the
+`sar_deadline` tool, and the message ends with "Decision needed".
+
+![Assessment with cited actions](docs/screenshots/2-assessment.png)
+
+**3. A person decides.** The analyst records the decision in one line. The agents
+acknowledge it and record nothing themselves.
+
+![The analyst's decision](docs/screenshots/3-decision.png)
+
+**4. On request, `@case-writer` drafts the SAR narrative for the BSA Officer**, with each
+piece of evidence traced to the tool or message it came from, and the clear statement
+that nothing has been filed.
+
+![Draft SAR narrative](docs/screenshots/4-case-writer-top.png)
+![Draft SAR evidence and deadline](docs/screenshots/5-case-writer-evidence.png)
+
+**5. The room itself:** created by our template, with its instructions, the four agents
+and the seven policy documents they cite.
+
+![Room configuration](docs/screenshots/6-room-setup.png)
+![Room documents](docs/screenshots/7-room-documents.png)
+
 ## How to run it
 
 ### Prerequisites
