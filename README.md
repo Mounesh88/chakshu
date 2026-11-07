@@ -93,7 +93,7 @@ and the seven policy documents they cite.
 ### Prerequisites
 
 - Docker Desktop
-- Rust 1.85 or newer
+- Rust 1.94 or newer (`rustup update`)
 - Python 3.11 or newer
 - Switch Console, with a local server running
 - At least one agent CLI: Claude Code, Codex or OpenCode
@@ -135,6 +135,8 @@ python python/score_alerts.py
 
 It prints the model's results and writes a score with its top three reasons for each
 alert to the `alert_scores` table, which the `score_alert` tool reads.
+Running `alerts` again rebuilds the alerts with new ids and clears the old scores, so run
+`score_alerts.py` again after it.
 
 ### Start the MCP server
 
@@ -173,16 +175,23 @@ mentions them).
    powershell -ExecutionPolicy Bypass -File scripts\setup-agent-folders.ps1
    ```
    It prints the agents' folder, for example `C:\Users\you\chakshu-agents`.
-2. Save `switch/chakshu-room.template.yaml` under **Templates** in Switch Console. On
-   Windows, Console cannot start agents itself, so ask **switch-buddy** to run it: "Run my
-   template Chakshu room with Claude Code on my computer, agents_root =
-   C:\Users\you\chakshu-agents". Switch creates the four agents and `#aml-alerts`.
+2. Save `switch/chakshu-room.template.yaml` under **Templates** in Switch Console.
+   - On macOS or Linux, run it from **Templates**, with **Agents folder** set to the folder
+     the script printed.
+   - On Windows, Console cannot start agents itself, so ask **switch-buddy** to run it:
+     "Run my template Chakshu room with Claude Code on my computer, agents_root =
+     C:\Users\you\chakshu-agents".
+
+   Switch creates the four agents and the private room `#aml-alerts`, with its
+   instructions and the seven policy documents.
 3. With the MCP server running, type in `#aml-alerts`:
    ```
    @graph-analyst next alert
    ```
 
-   The agents investigate; you reply with a `DECISION #<id>: ...` line.
+   Type the handle `@graph-analyst` exactly (pick it from the list, or type it whole): a
+   display name like "@Graph Analyst" typed as plain text does not reach the agent. The
+   agents investigate; you reply with a `DECISION #<id>: ...` line.
 4. Optional: `python python/demo_candidates.py` lists clear example alerts of each kind
    (mule, takeover victim, watchlist near-match, safe to close, unsure).
 

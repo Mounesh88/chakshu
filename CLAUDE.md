@@ -27,7 +27,7 @@ Never commit secrets (.env, API keys, tokens), the raw IBM data, or personal dat
 
 | Part | Language | Path | Job |
 |---|---|---|---|
-| Shared types | Rust | `crates/aml-core` | Alert, Transfer, Account, Case, Event |
+| Shared helpers | Rust | `crates/aml-core` | Currency conversion to USD, IBM timestamp parsing |
 | Data pipeline | Rust (csv + Postgres COPY) | `crates/aml-etl` | `load` IBM files, run `alerts` rules, `synth` profiles/logins/watchlist (SQL in `db/`) |
 | Graph patterns | Rust (petgraph) | `crates/aml-graph` | Fan-in, fan-out, cycles |
 | MCP server | Rust (rmcp 3) | `crates/aml-mcp` | Read-only tools every agent uses; streamable HTTP |
