@@ -44,11 +44,12 @@ SEED = 7
 
 FEATURES_SQL = """
 WITH day_tx AS (
-    -- Two index-friendly joins instead of one OR join; a self-transfer counts once.
+    -- Two index-friendly joins instead of one OR join. Self-transfers (an account paying
+    -- itself) are left out, as the alert rules leave them out (db/alerts.sql).
     SELECT a.id AS alert_id, t.*
     FROM alerts a
     JOIN transfers t
-      ON t.from_account = a.account_number
+      ON t.from_account = a.account_number AND t.to_account <> a.account_number
      AND t.ts >= a.alert_day AND t.ts < a.alert_day + 1
     UNION ALL
     SELECT a.id AS alert_id, t.*
