@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS alerts (
     UNIQUE (account_number, alert_day)
 );
 
+-- New alerts get new ids, so old model scores no longer match: drop them.
+-- Run python/score_alerts.py again after this step.
+DROP TABLE IF EXISTS alert_scores;
 TRUNCATE alerts RESTART IDENTITY;
 
 WITH moves AS (
